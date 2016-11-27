@@ -7,3 +7,5 @@ commands:
   townydeath:
     description: 'Spawn a banner'
     permission: townydeath.admin
+  spawn:
+    description: 'Go to the spawn'

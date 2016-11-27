@@ -92,6 +92,10 @@ public final class TownyDeath extends JavaPlugin {
         */
         getCommand("townydeath").setExecutor(new TownyCommand(this));
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
+
+        if (config.getBoolean("features.spawn-command")) {
+            getCommand("spawn").setExecutor(new SpawnCommand(this));
+        }
     }
 
     @Override

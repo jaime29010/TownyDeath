@@ -1,0 +1,9 @@
+name: TownyDeath
+version: ${project.version}
+main: me.jaimemartz.townydeath.TownyDeath
+authors: [jaime29010]
+depend: [Towny]
+commands:
+  townydeath:
+    description: 'Spawn a banner'
+    permission: townydeath.admin

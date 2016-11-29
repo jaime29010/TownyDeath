@@ -6,25 +6,29 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.stream.JsonReader;
 import me.jaimemartz.faucet.ConfigUtil;
 import me.jaimemartz.townydeath.data.JsonDataPool;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.World;
+import me.jaimemartz.townydeath.utils.PluginUtils;
+import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.*;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 public final class TownyDeath extends JavaPlugin {
+    private Map<Player, Location> revived = new HashMap<>();
+    private Map<Player, Integer> tasks = new HashMap<>();
+    private List<Entity> entities = new LinkedList<>();
     public static int SAVE_INTERVAL = 10;
     private FileConfiguration config;
     private JsonDataPool database;
+    private ItemStack item;
     private Location spawn;
     private Gson gson;
 
@@ -68,7 +72,6 @@ public final class TownyDeath extends JavaPlugin {
             database = new JsonDataPool();
         }
 
-
         //Database save task
         getLogger().info(String.format("The database will be saved every %s minutes", SAVE_INTERVAL));
         new BukkitRunnable() {
@@ -79,17 +82,16 @@ public final class TownyDeath extends JavaPlugin {
             }
         }.runTaskTimerAsynchronously(this, SAVE_INTERVAL * 60 * 20, SAVE_INTERVAL * 60 * 20);
 
-        /*
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                database.getPlayers().stream()
-                        .map(Bukkit::getPlayer)
-                        .filter(o -> o != null)
-                        .forEach(player -> updateCompass(player));
-            }
-        }.runTaskTimer(this, 0, 20 * 15);
-        */
+        //Setting up the item
+        item = new ItemStack(Material.PAPER);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(ChatColor.GREEN + "Botiquín");
+        meta.setLore(Arrays.asList(ChatColor.GREEN + "Haz click con este item en un fantasma para revivirlo"));
+        item.setItemMeta(meta);
+
+        entities.addAll(database.getEntities().stream().map(this::getEntityByUniqueId).filter(o -> o != null).collect(Collectors.toList()));
+
+        //Setting command and events
         getCommand("townydeath").setExecutor(new TownyCommand(this));
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
 
@@ -142,12 +144,24 @@ public final class TownyDeath extends JavaPlugin {
         ConfigUtil.saveConfig(config, "config.yml", this);
     }
 
+    public Map<Player, Location> getRevived() {
+        return revived;
+    }
+
+    public List<Entity> getEntitiesCache() {
+        return entities;
+    }
+
     public JsonDataPool getDataPool() {
         return database;
     }
 
     public Location getSpawnPoint() {
         return spawn;
+    }
+
+    public ItemStack getHealer() {
+        return item;
     }
 
     public Entity getEntityByUniqueId(UUID uniqueId) {
@@ -158,41 +172,31 @@ public final class TownyDeath extends JavaPlugin {
                 }
             }
         }
-
         return null;
     }
 
-    /*
-    public Player getNearestPlayer(Player player) {
-    double distNear = 0.0D;
-    Player playerNear = null;
-    for (Player player2 : Bukkit.getOnlinePlayers()) {
-        //don't include the player that's checking
-        if (player == player2) { continue; }
-        //make sure same world (cannot measure distance between worlds)
-        if (player.getWorld() != player2.getWorld()) { continue; }
+    public boolean checkRevive(Player player) {
+        if (database.getPlayers().contains(player.getUniqueId())) {
+            database.getPlayers().remove(player.getUniqueId());
+            revived.put(player, player.getLocation());
+            player.setHealth(0);
+            player.setGameMode(GameMode.SURVIVAL);
+            PluginUtils.removeBorderEffect(player);
+            checkClear(player);
+            return true;
+        }
+        return false;
+    }
 
-        Location location2 = player.getLocation();
-        double dist = location.distance(location2);
-        if (playerNear == null || dist < distNear) {
-            playerNear = player2;
-            distNear = dist;
+    public void checkClear(Player player) {
+        if (tasks.containsKey(player)) {
+            int taskId = tasks.remove(player);
+            getServer().getScheduler().cancelTask(taskId);
+            getLogger().info(String.format("Cancelled task %s for player %s", taskId, player.getName()));
         }
     }
-    return playerNear;
-}
 
-//you need to define the player variable
-Player playerNear = getNearestPlayer(player);
-if (playerNear != null) {
-    player.setCompassTarget(playerNear);
-}
-     */
-    /*
-    public void updateCompass(Player player) {
-        getLogger().info("Update of the compass of " + player.getName());
-        List<Entity> entities = database.getEntities().stream().map(this::getEntityByUniqueId).collect(Collectors.toList());
-
+    public Entity getClosest(Player player) {
         double distance = 200;
         Entity closest = null;
 
@@ -206,9 +210,13 @@ if (playerNear != null) {
         }
 
         if (closest == null) {
-            player.setCompassTarget(entities.get(ThreadLocalRandom.current().nextInt(entities.size())).getLocation());
+            return entities.get(ThreadLocalRandom.current().nextInt(entities.size()));
         } else {
-            player.setCompassTarget(closest.getLocation());
+            return closest;
         }
-    }*/
+    }
+
+    public Map<Player, Integer> getTasks() {
+        return tasks;
+    }
 }

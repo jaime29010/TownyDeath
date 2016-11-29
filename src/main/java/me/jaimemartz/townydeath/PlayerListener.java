@@ -4,10 +4,8 @@ import com.palmergames.bukkit.towny.exceptions.TownyException;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
 import me.jaimemartz.townydeath.utils.PluginUtils;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.*;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Player;
@@ -18,44 +16,34 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.*;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class PlayerListener implements Listener {
     private List<UUID> tpBypass = new ArrayList<>();
-    private Map<Player, Location> revived = new HashMap<>();
 
     private final TownyDeath plugin;
     public PlayerListener(TownyDeath plugin) {
         this.plugin = plugin;
     }
 
-    @EventHandler
-    public void on(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        if (plugin.getDataPool().getPlayers().contains(player.getUniqueId())) {
-            PluginUtils.sendBorderEffect(player);
-        }
-    }
-
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void on(PlayerDeathEvent event) {
         Player player = event.getEntity();
 
-        if (revived.containsKey(player)) {
+        if (plugin.getRevived().containsKey(player)) {
             event.setDeathMessage(null);
             event.getDrops().clear();
             return;
         }
 
         plugin.getDataPool().getPlayers().add(player.getUniqueId());
-        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false));
-        player.setGameMode(GameMode.ADVENTURE);
-        player.setHealth(1F);
-        player.setFoodLevel(20);
-        player.setSaturation(20);
+        applyDeath(player);
 
         if (player.isInsideVehicle()) {
             player.leaveVehicle();
@@ -77,7 +65,6 @@ public class PlayerListener implements Listener {
                     try {
                         Location target = town.getJailSpawn(resident.getJailSpawn());
                         resident.setJailed(false);
-                        plugin.getLogger().info("tp jail");
                         safeTeleport(player, target);
                         resident.setJailed(true);
                     } catch (TownyException ignored) {}
@@ -90,25 +77,95 @@ public class PlayerListener implements Listener {
 
         if (player.getLocation().getWorld() != plugin.getServer().getWorlds().get(0)) {
             safeTeleport(player, plugin.getSpawnPoint());
+        } else if (player.getLocation().getBlockY() <= -5) {
+            safeTeleport(player, plugin.getSpawnPoint());
         }
+    }
 
-        PluginUtils.sendBorderEffect(player);
-        /*
-        plugin.getServer().getScheduler().runTask(plugin, () -> {
-            player.setCompassTarget(plugin.getSpawnPoint());
-            player.getInventory().setItem(4, new ItemStack(Material.COMPASS));
-            ItemStack item = player.getInventory().getItem(4);
-            ItemMeta meta = item.getItemMeta();
-            meta.setDisplayName(ChatColor.GREEN + "Cruz mas cercana");
-            meta.setLore(Collections.singletonList(ChatColor.GREEN + "Ve a la cruz mas cercana para revivir"));
-            item.setItemMeta(meta);
-            player.getInventory().setItem(4, item);
-            player.updateInventory();
-            plugin.getServer().getScheduler().runTask(plugin, () -> {
-                plugin.updateCompass(player);
-            });
-        });
-        */
+    @EventHandler
+    public void on(PlayerRespawnEvent event) {
+        Player player = event.getPlayer();
+        if (plugin.getRevived().containsKey(player)) {
+            Location target = plugin.getRevived().remove(player);
+            if (target != null) {
+                event.setRespawnLocation(target);
+            }
+        } else {
+            if (plugin.getDataPool().getPlayers().contains(player.getUniqueId())) {
+                applyDeath(player);
+            }
+        }
+    }
+
+    @EventHandler
+    public void on(PlayerInteractAtEntityEvent event) {
+        Player player = event.getPlayer();
+        Entity clicked = event.getRightClicked();
+        if (plugin.getDataPool().getEntities().contains(clicked.getUniqueId())) {
+            if (plugin.checkRevive(player)) {
+                player.sendMessage(ChatColor.GREEN + "Enhorabuena, has revivido");
+            }
+        } else if (player.getItemInHand().isSimilar(plugin.getHealer())) {
+            if (plugin.getDataPool().getPlayers().contains(clicked.getUniqueId())) {
+                Player target = plugin.getServer().getPlayer(clicked.getUniqueId());
+                if (target != null) {
+                    ItemStack item = player.getItemInHand();
+                    if (item.getAmount() <= 1) {
+                        item.setType(Material.AIR);
+                    } else {
+                        item.setAmount(item.getAmount() - 1);
+                    }
+                    player.setItemInHand(item);
+                    plugin.checkRevive(target);
+                    target.sendMessage(ChatColor.GREEN + String.format("%s te ha revivido", player.getName()));
+                    player.sendMessage(ChatColor.GREEN + String.format("Has revivido a %s", target.getName()));
+                }
+            }
+        }
+        checkCancel(event);
+    }
+
+    @EventHandler
+    public void on(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        if (plugin.getDataPool().getPlayers().contains(player.getUniqueId())) {
+            applyDeath(player);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void on(PlayerTeleportEvent event) {
+        Player player = event.getPlayer();
+        if (plugin.getDataPool().getPlayers().contains(player.getUniqueId()) && !tpBypass.contains(player.getUniqueId())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void on(PlayerArmorStandManipulateEvent event) {
+        if (plugin.getDataPool().getEntities().contains(event.getRightClicked().getUniqueId())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void on(AsyncPlayerChatEvent event) {
+        checkCancel(event);
+        plugin.getDataPool().getPlayers().forEach(other -> event.getRecipients().remove(plugin.getServer().getPlayer(other)));
+    }
+
+    @EventHandler
+    public void on(EntityDamageEvent event) {
+        if (event.getEntity() instanceof Player) {
+            checkCancel((Player) event.getEntity(), event);
+        }
+    }
+
+    @EventHandler
+    public void on(EntityDamageByEntityEvent event) {
+        if (event.getDamager() instanceof Player) {
+            checkCancel((Player) event.getDamager(), event);
+        }
     }
 
     @EventHandler
@@ -126,12 +183,6 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
-    public void on(AsyncPlayerChatEvent event) {
-        checkCancel(event);
-        plugin.getDataPool().getPlayers().forEach(other -> event.getRecipients().remove(plugin.getServer().getPlayer(other)));
-    }
-
-    @EventHandler
     public void on(VehicleEnterEvent event) {
         if (event.getEntered() instanceof Player) {
             checkCancel((Player) event.getEntered(), event);
@@ -139,18 +190,24 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
+    public void on(FoodLevelChangeEvent event) {
+        checkCancel((Player) event.getEntity(), event);
+    }
+
+    @EventHandler
+    public void on(PlayerQuitEvent event) {
+        plugin.checkClear(event.getPlayer());
+    }
+
+    @EventHandler
     public void on(PlayerPickupItemEvent event) {
         checkCancel(event);
     }
 
+
     @EventHandler
     public void on(PlayerDropItemEvent event) {
         checkCancel(event);
-    }
-
-    @EventHandler
-    public void on(FoodLevelChangeEvent event) {
-        checkCancel((Player) event.getEntity(), event);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -164,62 +221,8 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
-    public void on(PlayerArmorStandManipulateEvent event) {
-        if (plugin.getDataPool().getEntities().contains(event.getRightClicked().getUniqueId())) {
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void on(PlayerRespawnEvent event) {
-        Player player = event.getPlayer();
-        Location target = revived.remove(player);
-        if (target != null) {
-            event.setRespawnLocation(target);
-        }
-    }
-
-    @EventHandler
-    public void on(PlayerInteractAtEntityEvent event) {
-        Player player = event.getPlayer();
-        if (plugin.getDataPool().getEntities().contains(event.getRightClicked().getUniqueId())) {
-            if (plugin.getDataPool().getPlayers().contains(player.getUniqueId())) {
-                plugin.getDataPool().getPlayers().remove(player.getUniqueId());
-                revived.put(player, player.getLocation());
-                player.setHealth(0);
-                player.setGameMode(GameMode.SURVIVAL);
-                PluginUtils.removeBorderEffect(player);
-                player.sendMessage(ChatColor.GREEN + "Enhorabuena, has revivido");
-            }
-        }
-        checkCancel(event);
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void on(PlayerTeleportEvent event) {
-        Player player = event.getPlayer();
-        if (plugin.getDataPool().getPlayers().contains(player.getUniqueId()) && !tpBypass.contains(player.getUniqueId())) {
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
     public void on(PlayerInteractEvent event) {
         checkCancel(event);
-    }
-
-    @EventHandler
-    public void on(EntityDamageEvent event) {
-        if (event.getEntity() instanceof Player) {
-            checkCancel((Player) event.getEntity(), event);
-        }
-    }
-
-    @EventHandler
-    public void on(EntityDamageByEntityEvent event) {
-        if (event.getDamager() instanceof Player) {
-            checkCancel((Player) event.getDamager(), event);
-        }
     }
 
     public void safeTeleport(Player player, Location location) {
@@ -228,6 +231,26 @@ public class PlayerListener implements Listener {
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
             tpBypass.remove(player.getUniqueId());
         }, 20 * 5);
+    }
+
+    public void applyDeath(Player player) {
+        plugin.getTasks().put(player, plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+            if (plugin.checkRevive(player)) {
+                player.sendMessage(ChatColor.GREEN + "Has sido revivido por la bendición de los dioses");
+            }
+        }, 20 * 60 * 10));
+        Entity closest = plugin.getClosest(player);
+        if (closest != null) {
+            Location loc = closest.getLocation();
+            player.sendMessage(ChatColor.GREEN + String.format("La cruz mas cercana esta en x:%s y:%s z:%s", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+        }
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false));
+        player.setGameMode(GameMode.ADVENTURE);
+        player.setHealth(1F);
+        player.setFoodLevel(20);
+        player.setFireTicks(0);
+        player.setSaturation(20);
+        PluginUtils.sendBorderEffect(player);
     }
 
     public boolean checkCancel(PlayerEvent ins) {

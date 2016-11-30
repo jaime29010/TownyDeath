@@ -73,7 +73,6 @@ public class PlayerListener implements Listener {
         }, 20);
 
         player.spigot().respawn();
-        player.sendMessage(ChatColor.YELLOW + "Estas muerto, busca una cruz para revivir");
 
         if (player.getLocation().getWorld() != plugin.getServer().getWorlds().get(0)) {
             safeTeleport(player, plugin.getSpawnPoint());
@@ -243,25 +242,25 @@ public class PlayerListener implements Listener {
                 player.sendMessage(ChatColor.GREEN + "Has sido revivido por la bendición de los dioses");
             }
         }, 20 * 60 * 10));
+        player.getActivePotionEffects().clear();
         player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false));
         player.setGameMode(GameMode.ADVENTURE);
         player.setHealth(1F);
         player.setFoodLevel(20);
         player.setFireTicks(0);
         player.setSaturation(20);
-        PluginUtils.sendBorderEffect(player);
+        plugin.getServer().getScheduler().runTask(plugin, () -> PluginUtils.sendBorderEffect(player));
     }
 
     public void findNearest(Player player) {
-        plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
-            if (player.getLocation().getWorld() == plugin.getServer().getWorlds().get(0)) {
-                Entity nearest = plugin.getNearest(player);
-                if (nearest != null) {
-                    Location loc = nearest.getLocation();
-                    player.sendMessage(ChatColor.GREEN + String.format("La cruz mas cercana esta en x:%s y:%s z:%s", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
-                }
-            }
-        }, 10);
+        player.sendMessage(ChatColor.YELLOW + "Estas muerto, busca una cruz para revivir");
+        Entity nearest = plugin.getNearest(player);
+        if (nearest != null) {
+            Location loc = nearest.getLocation();
+            plugin.getFindTasks().put(player, plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+                player.sendMessage(ChatColor.GREEN + String.format("La cruz mas cercana esta en x:%s y:%s z:%s", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+            }, 10, 20 * 10));
+        }
     }
 
     public boolean checkCancel(PlayerEvent ins) {

@@ -23,7 +23,8 @@ import java.util.stream.Collectors;
 
 public final class TownyDeath extends JavaPlugin {
     private Map<Player, Location> revived = new HashMap<>();
-    private Map<Player, Integer> tasks = new HashMap<>();
+    private Map<Player, Integer> reviveTasks = new HashMap<>();
+    private Map<Player, Integer> findTasks = new HashMap<>();
     private List<Entity> entities = new LinkedList<>();
     public static int SAVE_INTERVAL = 10;
     private FileConfiguration config;
@@ -189,8 +190,14 @@ public final class TownyDeath extends JavaPlugin {
     }
 
     public void checkClear(Player player) {
-        if (tasks.containsKey(player)) {
-            int taskId = tasks.remove(player);
+        if (reviveTasks.containsKey(player)) {
+            int taskId = reviveTasks.remove(player);
+            getServer().getScheduler().cancelTask(taskId);
+            getLogger().info(String.format("Cancelled task %s for player %s", taskId, player.getName()));
+        }
+
+        if (findTasks.containsKey(player)) {
+            int taskId = findTasks.remove(player);
             getServer().getScheduler().cancelTask(taskId);
             getLogger().info(String.format("Cancelled task %s for player %s", taskId, player.getName()));
         }
@@ -217,6 +224,10 @@ public final class TownyDeath extends JavaPlugin {
     }
 
     public Map<Player, Integer> getTasks() {
-        return tasks;
+        return reviveTasks;
+    }
+
+    public Map<Player, Integer> getFindTasks() {
+        return findTasks;
     }
 }

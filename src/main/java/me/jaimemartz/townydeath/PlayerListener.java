@@ -4,6 +4,7 @@ import com.palmergames.bukkit.towny.exceptions.TownyException;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
 import me.jaimemartz.townydeath.utils.PluginUtils;
+import me.jaimemartz.townydeath.utils.TitleUtils;
 import org.bukkit.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -15,6 +16,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.*;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -74,10 +76,17 @@ public class PlayerListener implements Listener {
 
         player.spigot().respawn();
 
-        if (player.getLocation().getWorld() != plugin.getServer().getWorlds().get(0)) {
+        if (location.getWorld() != plugin.getServer().getWorlds().get(0)) {
             safeTeleport(player, plugin.getSpawnPoint());
         } else if (player.getLocation().getBlockY() <= -5) {
             safeTeleport(player, plugin.getSpawnPoint());
+        } else {
+            int highest = location.getWorld().getHighestBlockYAt(location);
+            if (location.getBlockY() != highest) {
+                Location target = location.clone();
+                target.setY(highest + 1);
+                safeTeleport(player, target);
+            }
         }
 
         findNearest(player);
@@ -139,8 +148,10 @@ public class PlayerListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void on(PlayerTeleportEvent event) {
         Player player = event.getPlayer();
-        if (plugin.getDataPool().getPlayers().contains(player.getUniqueId()) && !tpBypass.contains(player.getUniqueId())) {
-            event.setCancelled(true);
+        if (plugin.getDataPool().getPlayers().contains(player.getUniqueId())) {
+            if (!tpBypass.contains(player.getUniqueId()) && event.getCause() != TeleportCause.PLUGIN) {
+                event.setCancelled(true);
+            }
         }
     }
 
@@ -243,7 +254,8 @@ public class PlayerListener implements Listener {
             }
         }, 20 * 60 * 10));
         player.getActivePotionEffects().clear();
-        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, 20 * 30, 8, false, false));
         player.setGameMode(GameMode.ADVENTURE);
         player.setHealth(1F);
         player.setFoodLevel(20);
@@ -253,11 +265,12 @@ public class PlayerListener implements Listener {
     }
 
     public void findNearest(Player player) {
-        player.sendMessage(ChatColor.YELLOW + "Estas muerto, busca una cruz para revivir");
+        TitleUtils.sendTitle(player, 20, 300, 20, ChatColor.RED + ChatColor.BOLD.toString() + "¡ESTAS MUERTO!", ChatColor.GRAY + "Busca una cruz para revivir");
         Entity nearest = plugin.getNearest(player);
         if (nearest != null) {
             Location loc = nearest.getLocation();
             plugin.getFindTasks().put(player, plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+                player.sendMessage(ChatColor.YELLOW + "Estas muerto, busca una cruz para revivir");
                 player.sendMessage(ChatColor.GREEN + String.format("La cruz mas cercana esta en x:%s y:%s z:%s", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
             }, 10, 20 * 10));
         }

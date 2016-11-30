@@ -7,12 +7,14 @@ import com.google.gson.stream.JsonReader;
 import me.jaimemartz.faucet.ConfigUtil;
 import me.jaimemartz.townydeath.data.JsonDataPool;
 import me.jaimemartz.townydeath.utils.PluginUtils;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -26,12 +28,14 @@ public final class TownyDeath extends JavaPlugin {
     private Map<Player, Integer> reviveTasks = new HashMap<>();
     private Map<Player, Integer> findTasks = new HashMap<>();
     private List<Entity> entities = new LinkedList<>();
-    public static int SAVE_INTERVAL = 10;
     private FileConfiguration config;
     private JsonDataPool database;
+    private Economy economy;
     private ItemStack item;
     private Location spawn;
     private Gson gson;
+
+    public static int SAVE_INTERVAL = 10;
 
     @Override
     public void onEnable() {
@@ -87,10 +91,15 @@ public final class TownyDeath extends JavaPlugin {
         item = new ItemStack(Material.PAPER);
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(ChatColor.GREEN + "Botiquín");
-        meta.setLore(Arrays.asList(ChatColor.GREEN + "Haz click con este item en un fantasma para revivirlo"));
+        meta.setLore(Collections.singletonList(ChatColor.GREEN + "Haz click con este item en un fantasma para revivirlo"));
         item.setItemMeta(meta);
 
+        //Caching the entities
         entities.addAll(database.getEntities().stream().map(this::getEntityByUniqueId).filter(o -> o != null).collect(Collectors.toList()));
+
+        //Setting up vault
+        RegisteredServiceProvider<Economy> service = getServer().getServicesManager().getRegistration(Economy.class);
+        economy = service.getProvider();
 
         //Setting command and events
         getCommand("townydeath").setExecutor(new TownyCommand(this));
@@ -163,6 +172,10 @@ public final class TownyDeath extends JavaPlugin {
 
     public ItemStack getHealer() {
         return item;
+    }
+
+    public Economy getEconomy() {
+        return economy;
     }
 
     public Entity getEntityByUniqueId(UUID uniqueId) {

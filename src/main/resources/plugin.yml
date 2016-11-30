@@ -2,7 +2,7 @@ name: TownyDeath
 version: ${project.version}
 main: me.jaimemartz.townydeath.TownyDeath
 authors: [jaime29010]
-depend: [Towny]
+depend: [Towny, Vault]
 commands:
   townydeath:
     description: 'Spawn a banner'

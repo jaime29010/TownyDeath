@@ -5,4 +5,6 @@ spawn:
   z: 100
 
 features:
-  spawn-command: true
+  spawn-command:
+    enabled: true
+    price: 100

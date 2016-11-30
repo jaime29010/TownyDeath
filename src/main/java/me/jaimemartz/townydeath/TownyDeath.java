@@ -196,7 +196,7 @@ public final class TownyDeath extends JavaPlugin {
         }
     }
 
-    public Entity getClosest(Player player) {
+    public Entity getNearest(Player player) {
         double distance = 200;
         Entity closest = null;
 

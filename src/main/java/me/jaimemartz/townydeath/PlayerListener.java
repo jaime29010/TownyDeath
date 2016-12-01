@@ -125,9 +125,10 @@ public class PlayerListener implements Listener {
                         item.setAmount(item.getAmount() - 1);
                     }
                     player.setItemInHand(item);
-                    plugin.checkRevive(target);
-                    target.sendMessage(ChatColor.GREEN + String.format("%s te ha revivido", player.getName()));
-                    player.sendMessage(ChatColor.GREEN + String.format("Has revivido a %s", target.getName()));
+                    if (plugin.checkRevive(target)) {
+                        target.sendMessage(ChatColor.GREEN + String.format("%s te ha revivido", player.getName()));
+                        player.sendMessage(ChatColor.GREEN + String.format("Has revivido a %s", target.getName()));
+                    }
                 }
             }
         }

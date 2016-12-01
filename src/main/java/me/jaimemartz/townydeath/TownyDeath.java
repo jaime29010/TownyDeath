@@ -6,6 +6,7 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.stream.JsonReader;
 import me.jaimemartz.faucet.ConfigUtil;
 import me.jaimemartz.townydeath.data.JsonDataPool;
+import me.jaimemartz.townydeath.event.PlayerReviveEvent;
 import me.jaimemartz.townydeath.utils.PluginUtils;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.*;
@@ -191,6 +192,10 @@ public final class TownyDeath extends JavaPlugin {
 
     public boolean checkRevive(Player player) {
         if (database.getPlayers().contains(player.getUniqueId())) {
+            PlayerReviveEvent call = new PlayerReviveEvent(player);
+            getServer().getPluginManager().callEvent(call);
+            if (call.isCancelled()) return false;
+
             database.getPlayers().remove(player.getUniqueId());
             revived.put(player, player.getLocation());
             player.setHealth(0);

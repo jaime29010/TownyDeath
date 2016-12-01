@@ -3,6 +3,7 @@ package me.jaimemartz.townydeath;
 import com.palmergames.bukkit.towny.exceptions.TownyException;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
+import me.jaimemartz.townydeath.event.PlayerGhostEvent;
 import me.jaimemartz.townydeath.utils.PluginUtils;
 import me.jaimemartz.townydeath.utils.TitleUtils;
 import org.bukkit.*;
@@ -42,6 +43,10 @@ public class PlayerListener implements Listener {
             event.getDrops().clear();
             return;
         }
+
+        PlayerGhostEvent call = new PlayerGhostEvent(player);
+        plugin.getServer().getPluginManager().callEvent(call);
+        if (call.isCancelled()) return;
 
         plugin.getDataPool().getPlayers().add(player.getUniqueId());
         applyDeath(player);

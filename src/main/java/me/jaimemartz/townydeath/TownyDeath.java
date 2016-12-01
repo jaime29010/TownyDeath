@@ -25,10 +25,11 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 public final class TownyDeath extends JavaPlugin {
-    private Map<Player, Location> revived = new HashMap<>();
     private Map<Player, Integer> reviveTasks = new HashMap<>();
     private Map<Player, Integer> findTasks = new HashMap<>();
+    private Map<Player, Location> revived = new HashMap<>();
     private List<Entity> entities = new LinkedList<>();
+    private List<UUID> tpBypass = new ArrayList<>();
     private FileConfiguration config;
     private JsonDataPool database;
     private Economy economy;
@@ -179,6 +180,18 @@ public final class TownyDeath extends JavaPlugin {
         return economy;
     }
 
+    public Map<Player, Integer> getReviveTasks() {
+        return reviveTasks;
+    }
+
+    public Map<Player, Integer> getFindTasks() {
+        return findTasks;
+    }
+
+    public List<UUID> getTpBypass() {
+        return tpBypass;
+    }
+
     public Entity getEntityByUniqueId(UUID uniqueId) {
         for (World world : Bukkit.getWorlds()) {
             for (Entity entity : world.getEntities()) {
@@ -241,11 +254,11 @@ public final class TownyDeath extends JavaPlugin {
         }
     }
 
-    public Map<Player, Integer> getTasks() {
-        return reviveTasks;
-    }
-
-    public Map<Player, Integer> getFindTasks() {
-        return findTasks;
+    public void safeTeleport(Player player, Location target) {
+        tpBypass.add(player.getUniqueId());
+        player.teleport(target);
+        getServer().getScheduler().runTaskLater(this, () -> {
+            tpBypass.remove(player.getUniqueId());
+        }, 20 * 5);
     }
 }

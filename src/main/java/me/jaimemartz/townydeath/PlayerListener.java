@@ -22,13 +22,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 public class PlayerListener implements Listener {
-    private List<UUID> tpBypass = new ArrayList<>();
-
     private final TownyDeath plugin;
     public PlayerListener(TownyDeath plugin) {
         this.plugin = plugin;
@@ -71,7 +65,7 @@ public class PlayerListener implements Listener {
                     try {
                         Location target = town.getJailSpawn(resident.getJailSpawn());
                         resident.setJailed(false);
-                        safeTeleport(player, target);
+                        plugin.safeTeleport(player, target);
                         resident.setJailed(true);
                     } catch (TownyException ignored) {}
                 }
@@ -81,15 +75,15 @@ public class PlayerListener implements Listener {
         player.spigot().respawn();
 
         if (location.getWorld() != plugin.getServer().getWorlds().get(0)) {
-            safeTeleport(player, plugin.getSpawnPoint());
+            plugin.safeTeleport(player, plugin.getSpawnPoint());
         } else if (player.getLocation().getBlockY() <= -5) {
-            safeTeleport(player, plugin.getSpawnPoint());
+            plugin.safeTeleport(player, plugin.getSpawnPoint());
         } else {
             int highest = location.getWorld().getHighestBlockYAt(location);
             if (location.getBlockY() != highest) {
                 Location target = location.clone();
                 target.setY(highest + 1);
-                safeTeleport(player, target);
+                plugin.safeTeleport(player, target);
             }
         }
 
@@ -153,7 +147,7 @@ public class PlayerListener implements Listener {
     public void on(PlayerTeleportEvent event) {
         Player player = event.getPlayer();
         if (plugin.getDataPool().getPlayers().contains(player.getUniqueId())) {
-            if (!tpBypass.contains(player.getUniqueId())) {
+            if (!plugin.getTpBypass().contains(player.getUniqueId())) {
                 event.setCancelled(true);
             }
         }
@@ -243,16 +237,8 @@ public class PlayerListener implements Listener {
         checkCancel(event);
     }
 
-    public void safeTeleport(Player player, Location location) {
-        tpBypass.add(player.getUniqueId());
-        player.teleport(location);
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            tpBypass.remove(player.getUniqueId());
-        }, 20 * 5);
-    }
-
     public void applyDeath(Player player) {
-        plugin.getTasks().put(player, plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+        plugin.getReviveTasks().put(player, plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
             if (plugin.checkRevive(player)) {
                 player.sendMessage(ChatColor.GREEN + "Has sido revivido por la bendición de los dioses");
             }

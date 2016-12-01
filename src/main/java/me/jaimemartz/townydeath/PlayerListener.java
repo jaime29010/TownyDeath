@@ -217,6 +217,12 @@ public class PlayerListener implements Listener {
         checkCancel(event);
     }
 
+    /*
+    @EventHandler
+    public void on(PlayerKickEvent event) {
+        checkCancel(event);
+    }
+    */
 
     @EventHandler
     public void on(PlayerDropItemEvent event) {

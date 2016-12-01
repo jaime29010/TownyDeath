@@ -39,7 +39,6 @@ public final class TownyDeath extends JavaPlugin {
     private Location spawn;
     private Gson gson;
 
-    //Esto es una prueba
     public static int SAVE_INTERVAL = 10;
 
     @Override

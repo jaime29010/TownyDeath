@@ -16,7 +16,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.*;
-import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -149,7 +148,7 @@ public class PlayerListener implements Listener {
     public void on(PlayerTeleportEvent event) {
         Player player = event.getPlayer();
         if (plugin.getDataPool().getPlayers().contains(player.getUniqueId())) {
-            if (!tpBypass.contains(player.getUniqueId()) && event.getCause() != TeleportCause.PLUGIN) {
+            if (!tpBypass.contains(player.getUniqueId())) {
                 event.setCancelled(true);
             }
         }

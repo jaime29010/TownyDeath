@@ -6,6 +6,7 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.stream.JsonReader;
 import me.jaimemartz.faucet.ConfigUtil;
 import me.jaimemartz.townydeath.data.JsonDataPool;
+import me.jaimemartz.townydeath.data.JsonLocation;
 import me.jaimemartz.townydeath.event.PlayerReviveEvent;
 import me.jaimemartz.townydeath.utils.PluginUtils;
 import net.milkbowl.vault.economy.Economy;
@@ -17,6 +18,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.*;
@@ -27,7 +30,6 @@ import java.util.stream.Collectors;
 public final class TownyDeath extends JavaPlugin {
     private Map<Player, Integer> reviveTasks = new HashMap<>();
     private Map<Player, Integer> findTasks = new HashMap<>();
-    private Map<Player, Location> revived = new HashMap<>();
     private List<Entity> entities = new LinkedList<>();
     private List<UUID> tpBypass = new ArrayList<>();
     private FileConfiguration config;
@@ -107,7 +109,7 @@ public final class TownyDeath extends JavaPlugin {
         getCommand("townydeath").setExecutor(new TownyCommand(this));
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
 
-        if (config.getBoolean("features.spawn-command")) {
+        if (config.getBoolean("features.spawn-command.enabled")) {
             getCommand("spawn").setExecutor(new SpawnCommand(this));
         }
     }
@@ -156,10 +158,6 @@ public final class TownyDeath extends JavaPlugin {
         ConfigUtil.saveConfig(config, "config.yml", this);
     }
 
-    public Map<Player, Location> getRevived() {
-        return revived;
-    }
-
     public List<Entity> getEntitiesCache() {
         return entities;
     }
@@ -203,14 +201,30 @@ public final class TownyDeath extends JavaPlugin {
         return null;
     }
 
+    public void applyDeath(Player player) {
+        reviveTasks.put(player, getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
+            if (checkRevive(player)) {
+                player.sendMessage(ChatColor.GREEN + "Has sido revivido por la bendición de los dioses");
+            }
+        }, 20 * 60 * 10));
+        player.getActivePotionEffects().clear();
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));
+        player.setGameMode(GameMode.ADVENTURE);
+        player.setHealth(1F);
+        player.setFoodLevel(20);
+        player.setFireTicks(0);
+        player.setSaturation(20);
+        getServer().getScheduler().runTask(this, () -> PluginUtils.sendBorderEffect(player));
+    }
+
     public boolean checkRevive(Player player) {
-        if (database.getPlayers().contains(player.getUniqueId())) {
+        if (database.getDied().contains(player.getUniqueId())) {
             PlayerReviveEvent call = new PlayerReviveEvent(player);
             getServer().getPluginManager().callEvent(call);
             if (call.isCancelled()) return false;
 
-            database.getPlayers().remove(player.getUniqueId());
-            revived.put(player, player.getLocation());
+            database.getDied().remove(player.getUniqueId());
+            database.getRevived().put(player, JsonLocation.fromBukkit(player.getLocation()));
             player.setHealth(0);
             player.setGameMode(GameMode.SURVIVAL);
             PluginUtils.removeBorderEffect(player);

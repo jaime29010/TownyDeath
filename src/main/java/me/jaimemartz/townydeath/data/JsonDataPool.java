@@ -1,27 +1,29 @@
 package me.jaimemartz.townydeath.data;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import org.bukkit.entity.Player;
+
+import java.util.*;
 
 public final class JsonDataPool {
     private final List<UUID> entities;
     private final List<UUID> players;
+    private final Map<Player, JsonLocation> revived;
 
     public JsonDataPool() {
-        entities = new ArrayList<>();
-        players = new ArrayList<>();
+        entities = Collections.synchronizedList(new ArrayList<>());
+        players = Collections.synchronizedList(new ArrayList<>());
+        revived = Collections.synchronizedMap(new HashMap<>());
     }
 
     public List<UUID> getEntities() {
-        synchronized (entities) {
-            return entities;
-        }
+        return entities;
     }
 
-    public List<UUID> getPlayers() {
-        synchronized (players) {
-            return players;
-        }
+    public List<UUID> getDied() {
+        return players;
+    }
+
+    public Map<Player, JsonLocation> getRevived() {
+        return revived;
     }
 }

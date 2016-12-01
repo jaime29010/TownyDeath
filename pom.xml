@@ -70,7 +70,7 @@
     <dependencies>
         <dependency>
             <groupId>me.jaimemartz</groupId>
-            <artifactId>faucet-bukkit</artifactId>
+            <artifactId>faucet-spigot</artifactId>
             <version>1.1</version>
         </dependency>
         <dependency>

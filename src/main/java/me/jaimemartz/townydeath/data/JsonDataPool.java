@@ -5,21 +5,21 @@ import org.bukkit.entity.Player;
 import java.util.*;
 
 public final class JsonDataPool {
-    private final List<UUID> entities;
-    private final List<UUID> players;
+    private final Set<UUID> entities;
+    private final Set<UUID> players;
     private final Map<Player, JsonLocation> revived;
 
     public JsonDataPool() {
-        entities = Collections.synchronizedList(new ArrayList<>());
-        players = Collections.synchronizedList(new ArrayList<>());
+        entities = Collections.synchronizedSet(new HashSet<>());
+        players = Collections.synchronizedSet(new HashSet<>());
         revived = Collections.synchronizedMap(new HashMap<>());
     }
 
-    public List<UUID> getEntities() {
+    public Set<UUID> getEntities() {
         return entities;
     }
 
-    public List<UUID> getDied() {
+    public Set<UUID> getDied() {
         return players;
     }
 

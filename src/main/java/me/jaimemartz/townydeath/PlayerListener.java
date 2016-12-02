@@ -43,7 +43,6 @@ public class PlayerListener implements Listener {
         plugin.getServer().getPluginManager().callEvent(call);
         if (call.isCancelled()) return;
 
-        plugin.getDataPool().getDied().add(player.getUniqueId());
         plugin.applyDeath(player);
 
         if (player.isInsideVehicle()) {
@@ -92,22 +91,6 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
-    public void on(PlayerRespawnEvent event) {
-        Player player = event.getPlayer();
-        if (plugin.getDataPool().getRevived().containsKey(player)) {
-            JsonLocation object = plugin.getDataPool().getRevived().remove(player);
-            if (object != null) {
-                event.setRespawnLocation(object.toBukkit());
-            }
-        } else {
-            if (plugin.getDataPool().getDied().contains(player.getUniqueId())) {
-                plugin.applyDeath(player);
-                findNearest(player);
-            }
-        }
-    }
-
-    @EventHandler
     public void on(PlayerInteractAtEntityEvent event) {
         Player player = event.getPlayer();
         Entity clicked = event.getRightClicked();
@@ -134,6 +117,22 @@ public class PlayerListener implements Listener {
             }
         }
         checkCancel(event);
+    }
+
+    @EventHandler
+    public void on(PlayerRespawnEvent event) {
+        Player player = event.getPlayer();
+        if (plugin.getDataPool().getRevived().containsKey(player)) {
+            JsonLocation object = plugin.getDataPool().getRevived().remove(player);
+            if (object != null) {
+                event.setRespawnLocation(object.toBukkit());
+            }
+        } else {
+            if (plugin.getDataPool().getDied().contains(player.getUniqueId())) {
+                plugin.applyDeath(player);
+                findNearest(player);
+            }
+        }
     }
 
     @EventHandler

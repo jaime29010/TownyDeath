@@ -202,6 +202,7 @@ public final class TownyDeath extends JavaPlugin {
     }
 
     public void applyDeath(Player player) {
+        database.getDied().add(player.getUniqueId());
         reviveTasks.put(player, getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
             if (checkRevive(player)) {
                 player.sendMessage(ChatColor.GREEN + "Has sido revivido por la bendición de los dioses");

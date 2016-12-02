@@ -90,7 +90,7 @@ public class PlayerListener implements Listener {
             if (plugin.getServer().getPluginManager().isPluginEnabled("NoCheatPlus")) {
                 NCPExemptionManager.unexempt(player, CheckType.MOVING_SURVIVALFLY);
             }
-        }, 20 * 2);
+        }, 20);
 
         player.getActivePotionEffects().forEach(effect -> player.removePotionEffect(effect.getType()));
         player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 30, 4));

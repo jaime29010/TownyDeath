@@ -211,9 +211,8 @@ public final class TownyDeath extends JavaPlugin {
             }
         }, 20 * 60 * 10));
         titleTasks.put(player, getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> {
-
+            TitleUtils.sendTitle(player, 20, 300, 20, ChatColor.RED + ChatColor.BOLD.toString() + "¡ESTAS MUERTO!", ChatColor.GRAY + "Busca una cruz para revivir");
         }, 0, 20 * 30));
-        TitleUtils.sendTitle(player, 20, 300, 20, ChatColor.RED + ChatColor.BOLD.toString() + "¡ESTAS MUERTO!", ChatColor.GRAY + "Busca una cruz para revivir");
         player.getActivePotionEffects().forEach(effect -> player.removePotionEffect(effect.getType()));
         player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));
         player.setGameMode(GameMode.ADVENTURE);

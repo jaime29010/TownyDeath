@@ -9,6 +9,7 @@ import me.jaimemartz.townydeath.data.JsonDataPool;
 import me.jaimemartz.townydeath.data.JsonLocation;
 import me.jaimemartz.townydeath.event.PlayerReviveEvent;
 import me.jaimemartz.townydeath.utils.PluginUtils;
+import me.jaimemartz.townydeath.utils.TitleUtils;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 public final class TownyDeath extends JavaPlugin {
     private Map<Player, Integer> reviveTasks = new HashMap<>();
     private Map<Player, Integer> findTasks = new HashMap<>();
+    private Map<Player, Integer> titleTasks = new HashMap<>();
     private List<Entity> entities = new LinkedList<>();
     private List<UUID> tpBypass = new ArrayList<>();
     private FileConfiguration config;
@@ -208,6 +210,10 @@ public final class TownyDeath extends JavaPlugin {
                 player.sendMessage(ChatColor.GREEN + "Has sido revivido por la bendición de los dioses");
             }
         }, 20 * 60 * 10));
+        titleTasks.put(player, getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> {
+
+        }, 0, 20 * 30));
+        TitleUtils.sendTitle(player, 20, 300, 20, ChatColor.RED + ChatColor.BOLD.toString() + "¡ESTAS MUERTO!", ChatColor.GRAY + "Busca una cruz para revivir");
         player.getActivePotionEffects().clear();
         player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));
         player.setGameMode(GameMode.ADVENTURE);
@@ -244,6 +250,12 @@ public final class TownyDeath extends JavaPlugin {
 
         if (findTasks.containsKey(player)) {
             int taskId = findTasks.remove(player);
+            getServer().getScheduler().cancelTask(taskId);
+            getLogger().info(String.format("Cancelled task %s for player %s", taskId, player.getName()));
+        }
+
+        if (titleTasks.containsKey(player)) {
+            int taskId = titleTasks.remove(player);
             getServer().getScheduler().cancelTask(taskId);
             getLogger().info(String.format("Cancelled task %s for player %s", taskId, player.getName()));
         }

@@ -96,7 +96,7 @@ public class PlayerListener implements Listener {
         Entity clicked = event.getRightClicked();
         if (plugin.getDataPool().getEntities().contains(clicked.getUniqueId())) {
             if (plugin.checkRevive(player)) {
-                player.sendMessage(ChatColor.GREEN + "Enhorabuena, has revivido");
+                TitleUtils.sendTitle(player, 60, 60, 20, ChatColor.GREEN + ChatColor.BOLD.toString() + "¡REVIVISTE!", ChatColor.GRAY + "Ya puedes jugar nuevamente.");
             }
         } else if (player.getItemInHand().isSimilar(plugin.getHealer())) {
             if (plugin.getDataPool().getDied().contains(clicked.getUniqueId())) {
@@ -243,13 +243,14 @@ public class PlayerListener implements Listener {
     }
 
     public void findNearest(Player player) {
-        TitleUtils.sendTitle(player, 20, 300, 20, ChatColor.RED + ChatColor.BOLD.toString() + "¡ESTAS MUERTO!", ChatColor.GRAY + "Busca una cruz para revivir");
+        TitleUtils.sendTitle(player, 10, 100, 20, ChatColor.RED + ChatColor.BOLD.toString() + "¡ESTAS MUERTO!", ChatColor.GRAY + "Busca una cruz para revivir.");
         Entity nearest = plugin.getNearest(player);
         if (nearest != null) {
             Location loc = nearest.getLocation();
             plugin.getFindTasks().put(player, plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
-                player.sendMessage(ChatColor.YELLOW + "Estas muerto, busca una cruz para revivir");
-                player.sendMessage(ChatColor.GREEN + String.format("La cruz mas cercana esta en x:%s y:%s z:%s", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+                player.sendMessage("§b§m=====================================================");
+                player.sendMessage(String.format("§cLa cruz más cercana se encuentra en: §7X:§f%s §7Y:§f%s §7Z:§f%s", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+                player.sendMessage("§b§m=====================================================");
             }, 10, 20 * 10));
         }
     }

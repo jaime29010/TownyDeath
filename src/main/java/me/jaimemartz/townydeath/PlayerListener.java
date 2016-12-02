@@ -242,7 +242,6 @@ public class PlayerListener implements Listener {
         checkCancel(event);
     }
 
-
     public void findNearest(Player player) {
         TitleUtils.sendTitle(player, 20, 300, 20, ChatColor.RED + ChatColor.BOLD.toString() + "¡ESTAS MUERTO!", ChatColor.GRAY + "Busca una cruz para revivir");
         Entity nearest = plugin.getNearest(player);

@@ -218,13 +218,6 @@ public class PlayerListener implements Listener {
         checkCancel(event);
     }
 
-    /*
-    @EventHandler
-    public void on(PlayerKickEvent event) {
-        checkCancel(event);
-    }
-    */
-
     @EventHandler
     public void on(PlayerDropItemEvent event) {
         checkCancel(event);
@@ -244,6 +237,12 @@ public class PlayerListener implements Listener {
     public void on(PlayerInteractEvent event) {
         checkCancel(event);
     }
+
+    @EventHandler
+    public void on(PlayerExpChangeEvent event) {
+        checkCancel(event);
+    }
+
 
     public void findNearest(Player player) {
         TitleUtils.sendTitle(player, 20, 300, 20, ChatColor.RED + ChatColor.BOLD.toString() + "¡ESTAS MUERTO!", ChatColor.GRAY + "Busca una cruz para revivir");

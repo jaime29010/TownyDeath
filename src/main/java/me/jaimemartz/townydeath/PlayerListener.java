@@ -81,6 +81,8 @@ public class PlayerListener implements Listener {
         if (plugin.getServer().getPluginManager().isPluginEnabled("NoCheatPlus")) {
             NCPExemptionManager.exemptPermanently(player, CheckType.MOVING_SURVIVALFLY);
         }
+
+        player.setVelocity(player.getLocation().getDirection().multiply(1.1D));
         player.setAllowFlight(true);
         player.setFlying(true);
 

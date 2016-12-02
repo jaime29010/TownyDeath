@@ -248,6 +248,7 @@ public class PlayerListener implements Listener {
         if (nearest != null) {
             Location loc = nearest.getLocation();
             plugin.getFindTasks().put(player, plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+
                 player.sendMessage("§b§m=====================================================");
                 player.sendMessage(String.format("§cLa cruz más cercana se encuentra en: §7X:§f%s §7Y:§f%s §7Z:§f%s", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
                 player.sendMessage("§b§m=====================================================");

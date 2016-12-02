@@ -3,6 +3,7 @@ version: ${project.version}
 main: me.jaimemartz.townydeath.TownyDeath
 authors: [jaime29010]
 depend: [Towny, Vault]
+softdepend: [NoCheatPlus]
 commands:
   townydeath:
     description: 'Spawn a banner'

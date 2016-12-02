@@ -250,7 +250,6 @@ public class PlayerListener implements Listener {
             Location loc = nearest.getLocation();
             plugin.getFindTasks().put(player, plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
                 player.sendMessage(ChatColor.YELLOW + "Estas muerto, busca una cruz para revivir");
-                player.sendMessage(ChatColor.RED + "Debug");
                 player.sendMessage(ChatColor.GREEN + String.format("La cruz mas cercana esta en x:%s y:%s z:%s", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
             }, 10, 20 * 10));
         }

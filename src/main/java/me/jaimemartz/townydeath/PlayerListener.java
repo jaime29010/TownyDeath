@@ -3,6 +3,7 @@ package me.jaimemartz.townydeath;
 import com.palmergames.bukkit.towny.exceptions.TownyException;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
+import me.jaimemartz.faucet.Messager;
 import me.jaimemartz.townydeath.data.JsonLocation;
 import me.jaimemartz.townydeath.event.PlayerGhostEvent;
 import org.bukkit.ChatColor;
@@ -21,6 +22,10 @@ import org.bukkit.event.entity.*;
 import org.bukkit.event.player.*;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.ItemStack;
+
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import me.jaimemartz.townydeath.utils.TitleUtils;
 
 public class PlayerListener implements Listener {
     private final TownyDeath plugin;
@@ -72,6 +77,14 @@ public class PlayerListener implements Listener {
         }, 20);
 
         player.spigot().respawn();
+        player.setAllowFlight(true);
+        player.setExp(0.0F);
+        player.setFireTicks(0);
+        player.setFlying(true);
+        player.setLevel(0);
+        player.getActivePotionEffects().forEach(effect -> player.removePotionEffect(effect.getType()));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 30, 4));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));
 
         if (location.getWorld() != plugin.getServer().getWorlds().get(0)) {
             plugin.safeTeleport(player, plugin.getSpawnPoint());
@@ -95,7 +108,7 @@ public class PlayerListener implements Listener {
         Entity clicked = event.getRightClicked();
         if (plugin.getDataPool().getEntities().contains(clicked.getUniqueId())) {
             if (plugin.checkRevive(player)) {
-                player.sendMessage(ChatColor.GREEN + "Enhorabuena, has revivido");
+                TitleUtils.sendTitle(player, 60, 60, 20, ChatColor.GREEN + ChatColor.BOLD.toString() + "¡REVIVISTE!", ChatColor.GRAY + "Ya puedes jugar nuevamente.");
             }
         } else if (player.getItemInHand().isSimilar(plugin.getHealer())) {
             if (plugin.getDataPool().getDied().contains(clicked.getUniqueId())) {
@@ -246,8 +259,10 @@ public class PlayerListener implements Listener {
         if (nearest != null) {
             Location loc = nearest.getLocation();
             plugin.getFindTasks().put(player, plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
-                player.sendMessage(ChatColor.YELLOW + "Estas muerto, busca una cruz para revivir");
-                player.sendMessage(ChatColor.GREEN + String.format("La cruz mas cercana esta en x:%s y:%s z:%s", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+                Messager msgr = new Messager(player);
+                msgr.send("&b&m=====================================================");
+                msgr.send(String.format("&cLa cruz más cercana se encuentra en: &7X:&f%s &7Y:&f%s &7Z:&f%s", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+                msgr.send("&b&m=====================================================");
             }, 10, 20 * 10));
         }
     }

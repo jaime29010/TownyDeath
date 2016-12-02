@@ -3,9 +3,12 @@ package me.jaimemartz.townydeath;
 import com.palmergames.bukkit.towny.exceptions.TownyException;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
+import fr.neatmonster.nocheatplus.checks.CheckType;
+import fr.neatmonster.nocheatplus.hooks.NCPExemptionManager;
 import me.jaimemartz.faucet.Messager;
 import me.jaimemartz.townydeath.data.JsonLocation;
 import me.jaimemartz.townydeath.event.PlayerGhostEvent;
+import me.jaimemartz.townydeath.utils.TitleUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -22,10 +25,8 @@ import org.bukkit.event.entity.*;
 import org.bukkit.event.player.*;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
 import org.bukkit.inventory.ItemStack;
-
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import me.jaimemartz.townydeath.utils.TitleUtils;
 
 public class PlayerListener implements Listener {
     private final TownyDeath plugin;
@@ -77,11 +78,20 @@ public class PlayerListener implements Listener {
         }, 20);
 
         player.spigot().respawn();
+        if (plugin.getServer().getPluginManager().isPluginEnabled("NoCheatPlus")) {
+            NCPExemptionManager.exemptPermanently(player, CheckType.MOVING_SURVIVALFLY);
+        }
         player.setAllowFlight(true);
-        player.setExp(0.0F);
-        player.setFireTicks(0);
         player.setFlying(true);
-        player.setLevel(0);
+
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            player.setAllowFlight(false);
+            player.setFlying(false);
+            if (plugin.getServer().getPluginManager().isPluginEnabled("NoCheatPlus")) {
+                NCPExemptionManager.unexempt(player, CheckType.MOVING_SURVIVALFLY);
+            }
+        }, 20 * 2);
+
         player.getActivePotionEffects().forEach(effect -> player.removePotionEffect(effect.getType()));
         player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 30, 4));
         player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));

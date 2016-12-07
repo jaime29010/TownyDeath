@@ -86,14 +86,6 @@ public class PlayerListener implements Listener {
         player.setAllowFlight(true);
         player.setFlying(true);
 
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            player.setAllowFlight(false);
-            player.setFlying(false);
-            if (plugin.getServer().getPluginManager().isPluginEnabled("NoCheatPlus")) {
-                NCPExemptionManager.unexempt(player, CheckType.MOVING_SURVIVALFLY);
-            }
-        }, 20);
-
         player.getActivePotionEffects().forEach(effect -> player.removePotionEffect(effect.getType()));
         player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 30, 4));
         player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));

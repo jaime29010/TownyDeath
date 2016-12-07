@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.stream.JsonReader;
+import fr.neatmonster.nocheatplus.checks.CheckType;
+import fr.neatmonster.nocheatplus.hooks.NCPExemptionManager;
 import me.jaimemartz.faucet.ConfigUtil;
 import me.jaimemartz.townydeath.data.JsonDataPool;
 import me.jaimemartz.townydeath.data.JsonLocation;
@@ -32,6 +34,7 @@ public final class TownyDeath extends JavaPlugin {
     private Map<Player, Integer> reviveTasks = new HashMap<>();
     private Map<Player, Integer> findTasks = new HashMap<>();
     private Map<Player, Integer> titleTasks = new HashMap<>();
+    private Map<Player, Integer> flyingTasks = new HashMap<>();
     private List<Entity> entities = new LinkedList<>();
     private List<UUID> tpBypass = new ArrayList<>();
     private FileConfiguration config;
@@ -213,6 +216,13 @@ public final class TownyDeath extends JavaPlugin {
         titleTasks.put(player, getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> {
             TitleUtils.sendTitle(player, 20, 300, 20, ChatColor.RED + ChatColor.BOLD.toString() + "¡ESTAS MUERTO!", ChatColor.GRAY + "Busca una cruz para revivir");
         }, 0, 20 * 30));
+        flyingTasks.put(player, getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
+            player.setFlying(false);
+            player.setAllowFlight(false);
+            if (getServer().getPluginManager().isPluginEnabled("NoCheatPlus")) {
+                NCPExemptionManager.unexempt(player, CheckType.MOVING_SURVIVALFLY);
+            }
+        }, 20 * 60 * 5));
         player.getActivePotionEffects().forEach(effect -> player.removePotionEffect(effect.getType()));
         player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, false, false));
         player.setGameMode(GameMode.ADVENTURE);
@@ -220,6 +230,9 @@ public final class TownyDeath extends JavaPlugin {
         player.setFoodLevel(20);
         player.setFireTicks(0);
         player.setSaturation(20);
+        player.setAllowFlight(true);
+        player.setFlying(true);
+
         getServer().getScheduler().runTask(this, () -> PluginUtils.sendBorderEffect(player));
     }
 
@@ -258,8 +271,15 @@ public final class TownyDeath extends JavaPlugin {
             getServer().getScheduler().cancelTask(taskId);
             getLogger().info(String.format("Cancelled task %s for player %s", taskId, player.getName()));
         }
+
+        if (flyingTasks.containsKey(player)) {
+            int taskId = flyingTasks.remove(player);
+            getServer().getScheduler().cancelTask(taskId);
+            getLogger().info(String.format("Cancelled task %s for player %s", taskId, player.getName()));
+        }
     }
 
+    /*
     public Entity getNearest(Player player) {
         double distance = 200;
         Entity closest = null;
@@ -278,6 +298,15 @@ public final class TownyDeath extends JavaPlugin {
         } else {
             return closest;
         }
+    }
+    */
+    public Entity getNearest(Player player) {
+        for (Entity entity : player.getNearbyEntities(100, 100, 100)) {
+            if (entities.contains(entity)) {
+                return entity;
+            }
+        }
+        return entities.get(ThreadLocalRandom.current().nextInt(entities.size()));
     }
 
     public void safeTeleport(Player player, Location target) {

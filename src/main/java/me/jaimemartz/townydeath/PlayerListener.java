@@ -78,6 +78,7 @@ public class PlayerListener implements Listener {
         }, 20);
 
         player.spigot().respawn();
+
         if (plugin.getServer().getPluginManager().isPluginEnabled("NoCheatPlus")) {
             NCPExemptionManager.exemptPermanently(player, CheckType.MOVING_SURVIVALFLY);
         }

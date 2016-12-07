@@ -219,6 +219,7 @@ public final class TownyDeath extends JavaPlugin {
         flyingTasks.put(player, getServer().getScheduler().scheduleSyncDelayedTask(this, () -> {
             player.setFlying(false);
             player.setAllowFlight(false);
+
             if (getServer().getPluginManager().isPluginEnabled("NoCheatPlus")) {
                 NCPExemptionManager.unexempt(player, CheckType.MOVING_SURVIVALFLY);
             }
@@ -244,6 +245,14 @@ public final class TownyDeath extends JavaPlugin {
 
             database.getDied().remove(player.getUniqueId());
             database.getRevived().put(player, JsonLocation.fromBukkit(player.getLocation()));
+
+            player.getActivePotionEffects().forEach(effect -> player.removePotionEffect(effect.getType()));
+            player.setFlying(false);
+            player.setAllowFlight(false);
+            if (getServer().getPluginManager().isPluginEnabled("NoCheatPlus")) {
+                NCPExemptionManager.unexempt(player, CheckType.MOVING_SURVIVALFLY);
+            }
+
             player.setHealth(0);
             player.setGameMode(GameMode.SURVIVAL);
             PluginUtils.removeBorderEffect(player);

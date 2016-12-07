@@ -1,13 +1,11 @@
 package me.jaimemartz.townydeath.data;
 
-import org.bukkit.entity.Player;
-
 import java.util.*;
 
 public final class JsonDataPool {
     private final Set<UUID> entities;
     private final Set<UUID> players;
-    private final Map<Player, JsonLocation> revived;
+    private final Map<UUID, JsonLocation> revived;
 
     public JsonDataPool() {
         entities = Collections.synchronizedSet(new HashSet<>());
@@ -23,7 +21,7 @@ public final class JsonDataPool {
         return players;
     }
 
-    public Map<Player, JsonLocation> getRevived() {
+    public Map<UUID, JsonLocation> getRevived() {
         return revived;
     }
 }

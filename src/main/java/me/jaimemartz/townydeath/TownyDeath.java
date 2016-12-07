@@ -244,7 +244,7 @@ public final class TownyDeath extends JavaPlugin {
             if (call.isCancelled()) return false;
 
             database.getDied().remove(player.getUniqueId());
-            database.getRevived().put(player, JsonLocation.fromBukkit(player.getLocation()));
+            database.getRevived().put(player.getUniqueId(), JsonLocation.fromBukkit(player.getLocation()));
 
             player.getActivePotionEffects().forEach(effect -> player.removePotionEffect(effect.getType()));
             player.setFlying(false);

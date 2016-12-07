@@ -38,7 +38,7 @@ public class PlayerListener implements Listener {
     public void on(PlayerDeathEvent event) {
         Player player = event.getEntity();
 
-        if (plugin.getDataPool().getRevived().containsKey(player)) {
+        if (plugin.getDataPool().getRevived().containsKey(player.getUniqueId())) {
             event.setDeathMessage(null);
             event.getDrops().clear();
             return;
@@ -139,8 +139,8 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void on(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
-        if (plugin.getDataPool().getRevived().containsKey(player)) {
-            JsonLocation object = plugin.getDataPool().getRevived().remove(player);
+        if (plugin.getDataPool().getRevived().containsKey(player.getUniqueId())) {
+            JsonLocation object = plugin.getDataPool().getRevived().remove(player.getUniqueId());
             if (object != null) {
                 event.setRespawnLocation(object.toBukkit());
             }

@@ -5,9 +5,9 @@ import org.bukkit.Location;
 
 public final class JsonLocation {
     private final String world;
-    private final int x, y, z;
+    private final double x, y, z;
 
-    public JsonLocation(String world, int x, int y, int z) {
+    public JsonLocation(String world, double x, double y, double z) {
         this.world = world;
         this.x = x;
         this.y = y;
@@ -18,15 +18,15 @@ public final class JsonLocation {
         return world;
     }
 
-    public int getX() {
+    public double getX() {
         return x;
     }
 
-    public int getY() {
+    public double getY() {
         return y;
     }
 
-    public int getZ() {
+    public double getZ() {
         return z;
     }
 
@@ -35,7 +35,7 @@ public final class JsonLocation {
     }
 
     public static JsonLocation fromBukkit(Location location) {
-        return new JsonLocation(location.getWorld().getName(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return new JsonLocation(location.getWorld().getName(), location.getX(), location.getY(), location.getZ());
     }
 
     @Override
@@ -45,18 +45,24 @@ public final class JsonLocation {
 
         JsonLocation that = (JsonLocation) o;
 
-        if (x != that.x) return false;
-        if (y != that.y) return false;
-        if (z != that.z) return false;
-        return world.equals(that.world);
+        if (Double.compare(that.x, x) != 0) return false;
+        if (Double.compare(that.y, y) != 0) return false;
+        if (Double.compare(that.z, z) != 0) return false;
+        return world != null ? world.equals(that.world) : that.world == null;
+
     }
 
     @Override
     public int hashCode() {
-        int result = world.hashCode();
-        result = 31 * result + x;
-        result = 31 * result + y;
-        result = 31 * result + z;
+        int result;
+        long temp;
+        result = world != null ? world.hashCode() : 0;
+        temp = Double.doubleToLongBits(x);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(y);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(z);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
         return result;
     }
 }
